@@ -13,12 +13,9 @@ library(rgdal)
 library(rgeos)
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 ```{r}
+#load the ind shapefile from GADM
 ind <- raster::getData(name="GADM",country='IND',level=0)
 par(mai=c(0,0,0,0))
 plot(ind)
@@ -26,15 +23,18 @@ plot(ind)
 
 
 ```{r}
+# Adjust the projection
 prj <- "+proj=tmerc +lat_0=20.59370 +lon_0=78.96290 +k=0.99878641 +x_0=3351548 +y_0=312249 +ellps=airy +datum=OSGB36 +units=m"
-guk <- spTransform(ind, CRS(prj))
+transform_ind <- spTransform(ind, CRS(prj))
 ```
 
 ```{r}
-disag = disaggregate(guk)
+# Disaggregate the india map features
+disag = disaggregate(transform_ind)
 head(disag)
 ```
 ```{r}
+# find the feature with maximum area , which is the main land, removing the islands
 a <- area(disag)
 i <- which.max(a)
 
@@ -49,6 +49,7 @@ plot(b)
 
 
 ```{r}
+# count the no of rulers or dividers required to cover the coastline
 measure_with_ruler <- function(pols, length, lonlat=FALSE) {
     # some sanity checking
     stopifnot(inherits(pols, 'SpatialPolygons'))
@@ -89,13 +90,7 @@ measure_with_ruler <- function(pols, length, lonlat=FALSE) {
 ```
 
 ```{r}
-y <- list()
-p <- measure_with_ruler(b, 500*1000)
-print(p)
-```
-
-
-```{r}
+# Apply measure_with_ruler function on various divider lengths
 y <- list()
 rulers <- c(0.1,0.3,0.5,1,5,10,25,30,40,50,60,70,80,90,100,150,200,250,300,500) # km
 for (i in 1:length(rulers)) {
@@ -106,6 +101,7 @@ for (i in 1:length(rulers)) {
 ```
 
 ```{r}
+# Plot the divider approximation on coastline
 par(mfrow=c(2,3), mai=rep(0,4))
 for (i in 1:length(y)) {
     plot(b, col='lightgray', lwd=2)
@@ -121,22 +117,9 @@ for (i in 1:length(y)) {
 
 ```
 ```{r}
+# print the counts
 n <- sapply(y, nrow)
 print(n)
-```
-
-```{r}
-# set up empty plot
-plot(log(rulers), log(n), axes=TRUE,main='LN(N)  Vs  LN(R)', xlab='LN(R)', ylab='LN(N)')
-
-# linear regression line
-m <- lm(log(n)~log(rulers))
-
-print(m)
-abline(m, lwd=3, col='lightblue')
-
-# add observations
-points(log(rulers), log(n), pch=20, cex=2, col='red')
 ```
 
 
