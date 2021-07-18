@@ -1,63 +1,61 @@
+#importing multiprocessing libraries
 from timeit import default_timer as dt
 import numpy as np
 from multiprocessing import Process,Array,Value
-from threading import Thread
 
-cores = 18
-nodes = 16
-gsize = 0.5
-node = 0
+#provide the following
+cores = 18      # no of cores
+nodes = 4       # no of nodes
+gsize = 0.5     # grid size
+node = 0        # node number
+
 
 st = dt()
-veckey = list(QgsProject.instance().mapLayers().keys())[1]
-vectorlayer = QgsProject.instance().mapLayers()[veckey]
-key = list(QgsProject.instance().mapLayers().keys())[0]
-grid = QgsProject.instance().mapLayers()[key]
+veckey = list(QgsProject.instance().mapLayers().keys())[1]      # Get the key for map/india layer
+instancelayer = QgsProject.instance().mapLayers()[veckey]       # Use key to get the map/india layer
+key = list(QgsProject.instance().mapLayers().keys())[0]         # Get the key for grid layer
+grid = QgsProject.instance().mapLayers()[key]                   # Use grid key to get the grid layer
 
-count = 0
 
-def counter(feats,vectors,arr,i):
+def counter(gridfts,instvectors,arr,i):
     cnt = 0
-    for feature in feats:
-        cands = vectors.getFeatures(QgsFeatureRequest().setFilterRect(feature.geometry().boundingBox()))
-        for area_feature in cands:
-            if feature.geometry().intersects(area_feature.geometry()):
+    for feature in gridfts:
+        # Get the features of map within boundary of grid feature
+        areas = instvectors.getFeatures(QgsFeatureRequest().setFilterRect(feature.geometry().boundingBox()))
+        for area_feature in areas:
+            if feature.geometry().intersects(area_feature.geometry()):          # if a map feature intersects with the grid feature count +1 
                 cnt+=1
-    print(cnt)
-    arr[i] = cnt
-    
-gfeats = np.array(list(grid.getFeatures()))
-print(len(gfeats))
-gsubs = np.array_split(gfeats,nodes)
-print(len(gsubs[node]))
-subs = np.array_split(gsubs[node],cores)
+    arr[i] = cnt            # Store the count of intersections into Multiprocessing Array
 
-threads = []
-arr = Array('i',range(cores))
+
+gfeats = np.array(list(grid.getFeatures()))         # Get the list of grid layer features
+gsubs = np.array_split(gfeats,nodes)                # Split the features list between the nodes 
+subs = np.array_split(gsubs[node],cores)            # Take the features of current node and split them into no of cores
+
+procs_list = []
+arr = Array('i',range(cores))                       # Create an Multiprocessing array to store results from each core
 
 i=0
 for sub in subs:
-    proc = Process(target=counter,args=(sub,vectorlayer.clone(),arr,i))
-    threads.append(proc)
-    proc.start()
+    proc = Process(target=counter,args=(sub,instancelayer.clone(),arr,i))   # Create process to count the intersections
+    procs_list.append(proc)                                                 # Add process to the procs_list
+    proc.start()                                                            # Start process
     i+=1
 
 for proc in threads:
-    proc.join()
+    proc.join()                                                             # Wait till all processes ends (join)
     
 
-sum = 0
+count = 0               # count of intersections
 for x in arr:
-    sum+=x
+    count+=x            # Sum all intersection counts from all cores    
 
 ctime = dt()-st
 
-f = open("//home//jaideep.gedi.17cse//qgis//india.txt","a+")
+# Write the results
+f = open("//home//qgis//indiaresults.txt","a+")
 f.write("grid size : "+str(gsize)+"\n")
 f.write("node : "+str(node)+"\n")
-f.write("count : "+str(sum)+"\n")
+f.write("count : "+str(count)+"\n")
 f.write("time : "+str(ctime)+"\n\n")
 f.close()
-
-print(sum)
-print(ctime)
