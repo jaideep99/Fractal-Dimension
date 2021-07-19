@@ -8,6 +8,21 @@ This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
+
+# This PROGRAM calculates the fractal dimension of the coastlines / borders using the Divider method.
+#
+# The whole coastline is considered a polygon with vertices, it starts at a vertex, finds the vertex on coastline at rulers length.
+# If the next vertex is starting vertex or there is no vertex, the search ends and count of rulers is stored for each ruler length.
+#
+# The maps and shapefiles are taken from GADM (https://gadm.org/download_country_v3.html)
+#
+# Authors: Jaideep Reddy, Deepika Bisht (BML Munjal University Gurgaon, India)
+#
+# Last Modified:18-07-2021
+
+
+
+# Importing libraries
 library(raster)
 library(rgdal)
 library(rgeos)
@@ -49,7 +64,7 @@ plot(b)
 
 
 ```{r}
-# count the no of rulers or dividers required to cover the coastline
+# This function counts the no of rulers or dividers required to cover the coastline
 measure_with_ruler <- function(pols, length, lonlat=FALSE) {
     # some sanity checking
     stopifnot(inherits(pols, 'SpatialPolygons'))
