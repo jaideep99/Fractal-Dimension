@@ -1,3 +1,15 @@
+# This PROGRAM calculates the fractal dimension of the coastline and border of India using the box counting method.
+#
+# The features/boxes of grid are distributed between the nodes and each node distributes features between its cores.
+# At each core, the function : counter() is executed and results are stored in a Multiprocessing array and summated to get the count of boxes.
+#
+# The maps and shapefiles are taken from GADM (https://gadm.org/download_country_v3.html)
+#
+# Authors: Jaideep Reddy, Deepika Bisht (BML Munjal University Gurgaon, India)
+#
+# Last Modified:18-07-2021
+
+
 #importing multiprocessing libraries
 from timeit import default_timer as dt
 import numpy as np
@@ -16,7 +28,7 @@ instancelayer = QgsProject.instance().mapLayers()[veckey]       # Use key to get
 key = list(QgsProject.instance().mapLayers().keys())[0]         # Get the key for grid layer
 grid = QgsProject.instance().mapLayers()[key]                   # Use grid key to get the grid layer
 
-
+# This function : counter() returns the count of boxes that contains a part of coastline / intersects with coastline.
 def counter(gridfts,instvectors,arr,i):
     cnt = 0
     for feature in gridfts:
